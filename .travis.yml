@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+addons:
+  apt:
+    sources:
+      - deadsnakes
+    packages:
+      - python3.5
+language: python
+python: 2.7
+env:
+  - TOX_ENV=py35
+  - TOX_ENV=py34
+  - TOX_ENV=py27
+  - TOX_ENV=pep8
+  - TOX_ENV=docs
+  - TOX_ENV=py_func_v3
+  - TOX_ENV=py_func_v4
+  - TOX_ENV=cli_func_v3
+  - TOX_ENV=cli_func_v4
+install:
+  - pip install tox
+script:
+  - tox -e $TOX_ENV

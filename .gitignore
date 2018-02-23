@@ -1,0 +1,10 @@
+*.pyc
+build/
+dist/
+MANIFEST
+.*.swp
+*.egg-info
+.idea/
+docs/_build
+.testrepository/
+.tox
