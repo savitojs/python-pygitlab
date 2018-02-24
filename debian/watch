@@ -1,4 +1,4 @@
 version=3
 
-opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/python-pygitlab-$1\.tar\.gz/ \
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/python-gitlab-$1\.tar\.gz/ \
   https://github.com/python-gitlab/python-gitlab/tags .*/v?(\d\S*)\.tar\.gz
