@@ -7,11 +7,15 @@ Build-Depends-Indep:
  dh-python,
  python-all,
  python-doc,
+ python-httmock,
+ python-mock,
  python-requests,
  python-setuptools (>= 0.6b3),
  python-setuptools,
  python-sphinx,
  python3-all,
+ python3-httmock,
+ python3-mock,
  python3-requests,
  python3-setuptools
 Standards-Version: 4.1.3
