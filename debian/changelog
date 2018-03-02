@@ -1,5 +1,5 @@
 python-gitlab (1.3.0-1) unstable; urgency=low
 
-  * Initial packaging
+  * Initial packaging (Closes: #891939)
 
  -- Federico Ceratto <federico@debian.org>  Fri, 23 Feb 2018 15:59:20 +0000
