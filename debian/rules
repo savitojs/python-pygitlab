@@ -17,5 +17,13 @@ ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
 	dh_sphinxdoc -ppython-gitlab-doc
 endif
 
+override_dh_install:
+	dh_install
+	# make sure python2 and python3 package will not conflict each other by providing both /usr/bin/gitlab
+	rm -f debian/python-$(PYBUILD_NAME)/usr/bin/gitlab
+	find debian/python-$(PYBUILD_NAME) -type d -empty -delete
+	# make sure python3-gitlab will not conflict ruby-gitlab
+	mv debian/python3-$(PYBUILD_NAME)/usr/bin/gitlab debian/python3-$(PYBUILD_NAME)/usr/bin/gitlab-py
+
 override_dh_installchangelogs:
 	dh_installchangelogs ChangeLog.rst
