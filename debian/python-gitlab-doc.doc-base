@@ -1,0 +1,9 @@
+Document: python-gitlab-doc
+Title: Python GitLab API client
+Author: Gauvain Pocentek <gauvain@pocentek.net> and others
+Abstract: Python GitLab API client
+Section: Programming/Python
+
+Format: HTML
+Index: /usr/share/doc/python-gitlab/html/index.html
+Files: /usr/share/doc/python-gitlab/html/*
