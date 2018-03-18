@@ -3,6 +3,9 @@
 export PYBUILD_NAME=gitlab
 export DH_VERBOSE=1
 
+# define DEB_VERSION
+include /usr/share/dpkg/default.mk
+
 %:
 	dh $@ --with python2,python3,sphinxdoc --buildsystem=pybuild
 
@@ -26,3 +29,12 @@ override_dh_auto_install:
 
 override_dh_installchangelogs:
 	dh_installchangelogs ChangeLog.rst
+
+override_dh_installman:
+	PYTHONPATH=. \
+		help2man -N -L C.UTF-8 \
+		-n "GitLab API client" \
+		--no-info --version-string="${DEB_VERSION}" \
+		-o debian/gitlab.1 \
+		./debian/gitlab-cli/usr/bin/gitlab
+	dh_installman ./debian/gitlab.1

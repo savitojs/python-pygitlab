@@ -5,6 +5,7 @@ Priority: optional
 Build-Depends: debhelper (>= 11)
 Build-Depends-Indep:
  dh-python,
+ help2man,
  python-all,
  python-doc,
  python-httmock,
