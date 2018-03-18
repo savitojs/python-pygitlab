@@ -29,21 +29,24 @@ Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
 Suggests: python-gitlab-doc
 Description: Python GitLab API client library
- Interact with GitLab API
+ Provides access to the GitLab v3 and v4 server API.
+ This package contains the Python 2 library.
 
 Package: python-gitlab-doc
 Architecture: all
 Section: doc
 Depends: ${misc:Depends}, ${sphinxdoc:Depends}, libjs-jquery, libjs-underscore
 Description: Python 3 GitLab API client library - documentation
- Interact with GitLab API
+ Provides access to the GitLab v3 and v4 server API.
+ This package contains the library documentation.
 
 Package: python3-gitlab
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}
 Suggests: python-gitlab-doc
 Description: Python 3 GitLab API client library
- Interact with GitLab API
+ Provides access to the GitLab v3 and v4 server API.
+ This package contains the Python 3 library.
 
 Package: gitlab-cli
 Architecture: all
@@ -51,4 +54,4 @@ Section: utils
 Depends: ${misc:Depends}, python3, python3-gitlab
 Breaks: ruby-gitlab
 Description: GitLab command-line client
- Interact with GitLab API
+ Command-line tool to interact with GitLab v3 and v4 server API.
