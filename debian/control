@@ -11,7 +11,6 @@ Build-Depends-Indep:
  python-mock,
  python-requests,
  python-setuptools (>= 0.6b3),
- python-setuptools,
  python-sphinx,
  python3-all,
  python3-httmock,
@@ -24,7 +23,6 @@ X-Python3-Version: >= 3.5
 Homepage: https://github.com/python-gitlab/python-gitlab
 Vcs-Git: https://salsa.debian.org/debian/python-pygitlab.git
 Vcs-Browser: https://salsa.debian.org/debian/python-pygitlab
-
 
 Package: python-gitlab
 Architecture: all
@@ -45,4 +43,12 @@ Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}
 Suggests: python-gitlab-doc
 Description: Python 3 GitLab API client library
+ Interact with GitLab API
+
+Package: gitlab-cli
+Architecture: all
+Section: utils
+Depends: ${misc:Depends}, python3, python3-gitlab
+Breaks: ruby-gitlab
+Description: GitLab command-line client
  Interact with GitLab API
