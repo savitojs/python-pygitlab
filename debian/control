@@ -53,7 +53,7 @@ Description: Python 3 GitLab API client library
 Package: gitlab-cli
 Architecture: all
 Section: utils
-Depends: ${misc:Depends}, python3, python3-gitlab
+Depends: ${misc:Depends}, python3, python3-gitlab (= ${binary:Version})
 Breaks: ruby-gitlab
 Description: GitLab command-line client
  Command-line tool to interact with GitLab v3 and v4 server API.
