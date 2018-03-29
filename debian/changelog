@@ -1,9 +1,9 @@
-python-gitlab (1:1.3.0-2) UNRELEASED; urgency=medium
+python-gitlab (1:1.3.0-2) unstable; urgency=medium
 
   * Add dependency version (Closes: #893936)
   * Install manpage in the correct package (Closes: 894145)
 
- -- Federico Ceratto <federico@debian.org>  Sat, 24 Mar 2018 14:59:31 +0000
+ -- Federico Ceratto <federico@debian.org>  Thu, 29 Mar 2018 15:25:37 +0100
 
 python-gitlab (1:1.3.0-1) unstable; urgency=low
 
