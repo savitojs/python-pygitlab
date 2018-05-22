@@ -23,6 +23,7 @@ from gitlab.base import *  # noqa
 from gitlab import cli
 from gitlab.exceptions import *  # noqa
 from gitlab.mixins import *  # noqa
+from gitlab import types
 from gitlab import utils
 
 VISIBILITY_PRIVATE = 'private'
@@ -315,12 +316,7 @@ class UserManager(CRUDMixin, RESTManager):
          'website_url', 'skip_confirmation', 'external', 'organization',
          'location')
     )
-
-    def _sanitize_data(self, data, action):
-        new_data = data.copy()
-        if 'confirm' in data:
-            new_data['confirm'] = str(new_data['confirm']).lower()
-        return new_data
+    _types = {'confirm': types.LowercaseStringAttribute}
 
 
 class CurrentUserEmail(ObjectDeleteMixin, RESTObject):
@@ -392,11 +388,27 @@ class ApplicationSettingsManager(GetWithoutIdMixin, UpdateMixin, RESTManager):
          'user_oauth_applications')
     )
 
-    def _sanitize_data(self, data, action):
-        new_data = data.copy()
+    @exc.on_http_error(exc.GitlabUpdateError)
+    def update(self, id=None, new_data={}, **kwargs):
+        """Update an object on the server.
+
+        Args:
+            id: ID of the object to update (can be None if not required)
+            new_data: the update data for the object
+            **kwargs: Extra options to send to the Gitlab server (e.g. sudo)
+
+        Returns:
+            dict: The new object data (*not* a RESTObject)
+
+        Raises:
+            GitlabAuthenticationError: If authentication is not correct
+            GitlabUpdateError: If the server cannot perform the request
+        """
+
+        data = new_data.copy()
         if 'domain_whitelist' in data and data['domain_whitelist'] is None:
-            new_data.pop('domain_whitelist')
-        return new_data
+            data.pop('domain_whitelist')
+        super(ApplicationSettingsManager, self).update(id, data, **kwargs)
 
 
 class BroadcastMessage(SaveMixin, ObjectDeleteMixin, RESTObject):
@@ -528,14 +540,14 @@ class GroupIssueManager(GetFromListMixin, RESTManager):
     _obj_cls = GroupIssue
     _from_parent_attrs = {'group_id': 'id'}
     _list_filters = ('state', 'labels', 'milestone', 'order_by', 'sort')
+    _types = {'labels': types.ListAttribute}
 
 
 class GroupMember(SaveMixin, ObjectDeleteMixin, RESTObject):
     _short_print_attr = 'username'
 
 
-class GroupMemberManager(GetFromListMixin, CreateMixin, UpdateMixin,
-                         DeleteMixin, RESTManager):
+class GroupMemberManager(CRUDMixin, RESTManager):
     _path = '/groups/%(group_id)s/members'
     _obj_cls = GroupMember
     _from_parent_attrs = {'group_id': 'id'}
@@ -736,6 +748,7 @@ class IssueManager(GetFromListMixin, RESTManager):
     _path = '/issues'
     _obj_cls = Issue
     _list_filters = ('state', 'labels', 'order_by', 'sort')
+    _types = {'labels': types.ListAttribute}
 
 
 class License(RESTObject):
@@ -808,7 +821,7 @@ class Namespace(RESTObject):
     pass
 
 
-class NamespaceManager(GetFromListMixin, RESTManager):
+class NamespaceManager(RetrieveMixin, RESTManager):
     _path = '/namespaces'
     _obj_cls = Namespace
     _list_filters = ('search', )
@@ -840,7 +853,7 @@ class ProjectBoard(RESTObject):
     _managers = (('lists', 'ProjectBoardListManager'), )
 
 
-class ProjectBoardManager(GetFromListMixin, RESTManager):
+class ProjectBoardManager(RetrieveMixin, RESTManager):
     _path = '/projects/%(project_id)s/boards'
     _obj_cls = ProjectBoard
     _from_parent_attrs = {'project_id': 'id'}
@@ -868,7 +881,8 @@ class ProjectBranch(ObjectDeleteMixin, RESTObject):
             GitlabAuthenticationError: If authentication is not correct
             GitlabProtectError: If the branch could not be protected
         """
-        path = '%s/%s/protect' % (self.manager.path, self.get_id())
+        id = self.get_id().replace('/', '%2F')
+        path = '%s/%s/protect' % (self.manager.path, id)
         post_data = {'developers_can_push': developers_can_push,
                      'developers_can_merge': developers_can_merge}
         self.manager.gitlab.http_put(path, post_data=post_data, **kwargs)
@@ -886,7 +900,8 @@ class ProjectBranch(ObjectDeleteMixin, RESTObject):
             GitlabAuthenticationError: If authentication is not correct
             GitlabProtectError: If the branch could not be unprotected
         """
-        path = '%s/%s/unprotect' % (self.manager.path, self.get_id())
+        id = self.get_id().replace('/', '%2F')
+        path = '%s/%s/unprotect' % (self.manager.path, id)
         self.manager.gitlab.http_put(path, **kwargs)
         self._attrs['protected'] = False
 
@@ -909,7 +924,7 @@ class ProjectCustomAttributeManager(RetrieveMixin, SetMixin, DeleteMixin,
     _from_parent_attrs = {'project_id': 'id'}
 
 
-class ProjectJob(RESTObject):
+class ProjectJob(RESTObject, RefreshMixin):
     @cli.register_custom_action('ProjectJob')
     @exc.on_http_error(exc.GitlabJobCancelError)
     def cancel(self, **kwargs):
@@ -1014,6 +1029,34 @@ class ProjectJob(RESTObject):
 
     @cli.register_custom_action('ProjectJob')
     @exc.on_http_error(exc.GitlabGetError)
+    def artifact(self, path, streamed=False, action=None, chunk_size=1024,
+                 **kwargs):
+        """Get a single artifact file from within the job's artifacts archive.
+
+        Args:
+            path (str): Path of the artifact
+            streamed (bool): If True the data will be processed by chunks of
+                `chunk_size` and each chunk is passed to `action` for
+                treatment
+            action (callable): Callable responsible of dealing with chunk of
+                data
+            chunk_size (int): Size of each chunk
+            **kwargs: Extra options to send to the server (e.g. sudo)
+
+        Raises:
+            GitlabAuthenticationError: If authentication is not correct
+            GitlabGetError: If the artifacts could not be retrieved
+
+        Returns:
+            str: The artifacts if `streamed` is False, None otherwise.
+        """
+        path = '%s/%s/artifacts/%s' % (self.manager.path, self.get_id(), path)
+        result = self.manager.gitlab.http_get(path, streamed=streamed,
+                                              **kwargs)
+        return utils.response_content(result, streamed, action, chunk_size)
+
+    @cli.register_custom_action('ProjectJob')
+    @exc.on_http_error(exc.GitlabGetError)
     def trace(self, streamed=False, action=None, chunk_size=1024, **kwargs):
         """Get the job trace.
 
@@ -1045,7 +1088,7 @@ class ProjectJobManager(RetrieveMixin, RESTManager):
     _from_parent_attrs = {'project_id': 'id'}
 
 
-class ProjectCommitStatus(RESTObject):
+class ProjectCommitStatus(RESTObject, RefreshMixin):
     pass
 
 
@@ -1156,11 +1199,11 @@ class ProjectEnvironmentManager(GetFromListMixin, CreateMixin, UpdateMixin,
     _update_attrs = (tuple(), ('name', 'external_url'))
 
 
-class ProjectKey(ObjectDeleteMixin, RESTObject):
+class ProjectKey(SaveMixin, ObjectDeleteMixin, RESTObject):
     pass
 
 
-class ProjectKeyManager(NoUpdateMixin, RESTManager):
+class ProjectKeyManager(CRUDMixin, RESTManager):
     _path = '/projects/%(project_id)s/deploy_keys'
     _obj_cls = ProjectKey
     _from_parent_attrs = {'project_id': 'id'}
@@ -1318,12 +1361,7 @@ class ProjectIssueManager(CRUDMixin, RESTManager):
     _update_attrs = (tuple(), ('title', 'description', 'assignee_id',
                                'milestone_id', 'labels', 'created_at',
                                'updated_at', 'state_event', 'due_date'))
-
-    def _sanitize_data(self, data, action):
-        new_data = data.copy()
-        if 'labels' in data:
-            new_data['labels'] = ','.join(data['labels'])
-        return new_data
+    _types = {'labels': types.ListAttribute}
 
 
 class ProjectMember(SaveMixin, ObjectDeleteMixin, RESTObject):
@@ -1641,12 +1679,7 @@ class ProjectMergeRequestManager(CRUDMixin, RESTManager):
                                'description', 'state_event', 'labels',
                                'milestone_id'))
     _list_filters = ('iids', 'state', 'order_by', 'sort')
-
-    def _sanitize_data(self, data, action):
-        new_data = data.copy()
-        if 'labels' in data:
-            new_data['labels'] = ','.join(data['labels'])
-        return new_data
+    _types = {'labels': types.ListAttribute}
 
 
 class ProjectMilestone(SaveMixin, ObjectDeleteMixin, RESTObject):
@@ -1964,7 +1997,7 @@ class ProjectPipelineJobsManager(ListMixin, RESTManager):
     _list_filters = ('scope',)
 
 
-class ProjectPipeline(RESTObject):
+class ProjectPipeline(RESTObject, RefreshMixin):
     _managers = (('jobs', 'ProjectPipelineJobManager'), )
 
     @cli.register_custom_action('ProjectPipeline')
@@ -2403,12 +2436,13 @@ class Project(SaveMixin, ObjectDeleteMixin, RESTObject):
 
     @cli.register_custom_action('Project', tuple(), ('path', 'ref'))
     @exc.on_http_error(exc.GitlabGetError)
-    def repository_tree(self, path='', ref='', **kwargs):
+    def repository_tree(self, path='', ref='', recursive=False, **kwargs):
         """Return a list of files in the repository.
 
         Args:
             path (str): Path of the top folder (/ by default)
             ref (str): Reference to a commit or branch
+            recursive (bool): Whether to get the tree recursively
             all (bool): If True, return all the items, without pagination
             per_page (int): Number of items to retrieve per request
             page (int): ID of the page to return (starts with page 1)
@@ -2424,7 +2458,7 @@ class Project(SaveMixin, ObjectDeleteMixin, RESTObject):
             list: The representation of the tree
         """
         gl_path = '/projects/%s/repository/tree' % self.get_id()
-        query_data = {}
+        query_data = {'recursive': recursive}
         if path:
             query_data['path'] = path
         if ref:
@@ -2671,6 +2705,22 @@ class Project(SaveMixin, ObjectDeleteMixin, RESTObject):
                 'group_access': group_access,
                 'expires_at': expires_at}
         self.manager.gitlab.http_post(path, post_data=data, **kwargs)
+
+    @cli.register_custom_action('Project', ('group_id', ))
+    @exc.on_http_error(exc.GitlabDeleteError)
+    def unshare(self, group_id, **kwargs):
+        """Delete a shared project link within a group.
+
+        Args:
+            group_id (int): ID of the group.
+            **kwargs: Extra options to send to the server (e.g. sudo)
+
+        Raises:
+            GitlabAuthenticationError: If authentication is not correct
+            GitlabDeleteError: If the server failed to perform the request
+        """
+        path = '/projects/%s/share/%s' % (self.get_id(), group_id)
+        self.manager.gitlab.http_delete(path, **kwargs)
 
     # variables not supported in CLI
     @cli.register_custom_action('Project', ('ref', 'token'))

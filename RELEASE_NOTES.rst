@@ -4,6 +4,45 @@ Release notes
 
 This page describes important changes between python-gitlab releases.
 
+Changes from 1.3 to 1.4
+=======================
+
+* 1.4 is the last release supporting the v3 API, and the related code will be
+  removed in the 1.5 version.
+
+  If you are using a Gitlab server version that does not support the v4 API you
+  can:
+
+  * upgrade the server (recommended)
+  * make sure to use version 1.4 of python-gitlab (``pip install
+    python-gitlab==1.4``)
+
+  See also the `Switching to GitLab API v4 documentation
+  <http://python-gitlab.readthedocs.io/en/master/switching-to-v4.html>`__.
+* python-gitlab now handles the server rate limiting feature. It will pause for
+  the required time when reaching the limit (`documentation
+  <http://python-gitlab.readthedocs.io/en/master/api-usage.html#rate-limits>`__)
+* The ``GetFromListMixin.get()`` method is deprecated and will be removed in
+  the next python-gitlab version. The goal of this mixin/method is to provide a
+  way to get an object by looping through a list for GitLab objects that don't
+  support the GET method. The method `is broken
+  <https://github.com/python-gitlab/python-gitlab/issues/499>`__ and conflicts
+  with the GET method now supported by some GitLab objects.
+
+  You can implement your own method with something like:
+
+  .. code-block:: python
+
+     def get_from_list(self, id):
+         for obj in self.list(as_list=False):
+             if obj.get_id() == id:
+                 return obj
+
+* The ``GroupMemberManager``, ``NamespaceManager`` and ``ProjectBoardManager``
+  managers now use the GET API from GitLab instead of the
+  ``GetFromListMixin.get()`` method.
+
+
 Changes from 1.2 to 1.3
 =======================
 
@@ -52,7 +91,7 @@ Changes from 0.21 to 1.0.0
 by default.
 
 v4 is mostly compatible with the v3, but some important changes have been
-introduced. Make sure to read `Switching to GtiLab API v4
+introduced. Make sure to read `Switching to GitLab API v4
 <http://python-gitlab.readthedocs.io/en/master/switching-to-v4.html>`_.
 
 The development focus will be v4 from now on. v3 has been deprecated by GitLab

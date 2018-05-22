@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import warnings
+
 import gitlab
 from gitlab import base
 from gitlab import cli
@@ -68,6 +70,25 @@ class GetWithoutIdMixin(object):
         return self._obj_cls(self, server_data)
 
 
+class RefreshMixin(object):
+    @exc.on_http_error(exc.GitlabGetError)
+    def refresh(self, **kwargs):
+        """Refresh a single object from server.
+
+        Args:
+            **kwargs: Extra options to send to the Gitlab server (e.g. sudo)
+
+        Returns None (updates the object)
+
+        Raises:
+            GitlabAuthenticationError: If authentication is not correct
+            GitlabGetError: If the server cannot perform the request
+        """
+        path = '%s/%s' % (self.manager.path, self.id)
+        server_data = self.manager.gitlab.http_get(path, **kwargs)
+        self._update_attrs(server_data)
+
+
 class ListMixin(object):
     @exc.on_http_error(exc.GitlabListError)
     def list(self, **kwargs):
@@ -89,9 +110,21 @@ class ListMixin(object):
             GitlabListError: If the server cannot perform the request
         """
 
+        # Duplicate data to avoid messing with what the user sent us
+        data = kwargs.copy()
+
+        # We get the attributes that need some special transformation
+        types = getattr(self, '_types', {})
+        if types:
+            for attr_name, type_cls in types.items():
+                if attr_name in data.keys():
+                    type_obj = type_cls(data[attr_name])
+                    data[attr_name] = type_obj.get_for_api()
+
         # Allow to overwrite the path, handy for custom listings
-        path = kwargs.pop('path', self.path)
-        obj = self.gitlab.http_list(path, **kwargs)
+        path = data.pop('path', self.path)
+
+        obj = self.gitlab.http_list(path, **data)
         if isinstance(obj, list):
             return [self._obj_cls(self, item) for item in obj]
         else:
@@ -99,8 +132,12 @@ class ListMixin(object):
 
 
 class GetFromListMixin(ListMixin):
+    """This mixin is deprecated."""
+
     def get(self, id, **kwargs):
         """Retrieve a single object.
+
+        This Method is deprecated.
 
         Args:
             id (int or str): ID of the object to retrieve
@@ -113,6 +150,9 @@ class GetFromListMixin(ListMixin):
             GitlabAuthenticationError: If authentication is not correct
             GitlabGetError: If the server cannot perform the request
         """
+        warnings.warn('The get() method for this object is deprecated '
+                      'and will be removed in a future version.',
+                      DeprecationWarning)
         try:
             gen = self.list()
         except exc.GitlabListError:
@@ -168,8 +208,18 @@ class CreateMixin(object):
             GitlabCreateError: If the server cannot perform the request
         """
         self._check_missing_create_attrs(data)
-        if hasattr(self, '_sanitize_data'):
-            data = self._sanitize_data(data, 'create')
+
+        # We get the attributes that need some special transformation
+        types = getattr(self, '_types', {})
+
+        if types:
+            # Duplicate data to avoid messing with what the user sent us
+            data = data.copy()
+            for attr_name, type_cls in types.items():
+                if attr_name in data.keys():
+                    type_obj = type_cls(data[attr_name])
+                    data[attr_name] = type_obj.get_for_api()
+
         # Handle specific URL for creation
         path = kwargs.pop('path', self.path)
         server_data = self.gitlab.http_post(path, post_data=data, **kwargs)
@@ -219,12 +269,15 @@ class UpdateMixin(object):
             path = '%s/%s' % (self.path, id)
 
         self._check_missing_update_attrs(new_data)
-        if hasattr(self, '_sanitize_data'):
-            data = self._sanitize_data(new_data, 'update')
-        else:
-            data = new_data
 
-        return self.gitlab.http_put(path, post_data=data, **kwargs)
+        # We get the attributes that need some special transformation
+        types = getattr(self, '_types', {})
+        for attr_name, type_cls in types.items():
+            if attr_name in new_data.keys():
+                type_obj = type_cls(new_data[attr_name])
+                new_data[attr_name] = type_obj.get_for_api()
+
+        return self.gitlab.http_put(path, post_data=new_data, **kwargs)
 
 
 class SetMixin(object):

@@ -103,9 +103,8 @@ foobar_user = gl.users.create(
      'name': 'Foo Bar', 'password': 'foobar_password'})
 
 assert gl.users.list(search='foobar')[0].id == foobar_user.id
-usercmp = lambda x,y: cmp(x.id, y.id)
-expected = sorted([new_user, foobar_user], cmp=usercmp)
-actual = sorted(list(gl.users.list(search='foo')), cmp=usercmp)
+expected = [new_user, foobar_user]
+actual = list(gl.users.list(search='foo'))
 assert len(expected) == len(actual)
 assert len(gl.users.list(search='asdf')) == 0
 foobar_user.bio = 'This is the user bio'
@@ -337,7 +336,7 @@ admin_project.files.create({'file_path': 'README',
                             'content': 'Initial content',
                             'commit_message': 'Initial commit'})
 readme = admin_project.files.get(file_path='README', ref='master')
-readme.content = base64.b64encode("Improved README")
+readme.content = base64.b64encode(b"Improved README")
 time.sleep(2)
 readme.save(branch="master", commit_message="new commit")
 readme.delete(commit_message="Removing README", branch="master")
@@ -646,3 +645,28 @@ gl.user_activities.list()
 
 # events
 gl.events.list()
+
+# rate limit
+settings = gl.settings.get()
+settings.throttle_authenticated_api_enabled = True
+settings.throttle_authenticated_api_requests_per_period = 1
+settings.throttle_authenticated_api_period_in_seconds = 3
+settings.save()
+projects = list()
+for i in range(0, 20):
+    projects.append(gl.projects.create(
+        {'name': str(i) + "ok"}))
+
+error_message = None
+for i in range(20, 40):
+    try:
+        projects.append(
+            gl.projects.create(
+                {'name': str(i) + 'shouldfail'}, obey_rate_limit=False))
+    except gitlab.GitlabCreateError as e:
+        error_message = e.error_message
+        break
+assert 'Retry later' in error_message
+[current_project.delete() for current_project in projects]
+settings.throttle_authenticated_api_enabled = False
+settings.save()

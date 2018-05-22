@@ -49,7 +49,7 @@ Note on password authentication
 
 The ``/session`` API endpoint used for username/password authentication has
 been removed from GitLab in version 10.2, and is not available on gitlab.com
-anymore. Personal token authentication is the prefered authentication method.
+anymore. Personal token authentication is the preferred authentication method.
 
 If you need username/password authentication, you can use cookie-based
 authentication. You can use the web UI form to authenticate, retrieve cookies,
@@ -195,7 +195,7 @@ To avoid useless calls to the server API, you can create lazy objects. These
 objects are created locally using a known ID, and give access to other managers
 and methods.
 
-The following exemple will only make one API call to the GitLab server to star
+The following example will only make one API call to the GitLab server to star
 a project:
 
 .. code-block:: python
@@ -228,15 +228,16 @@ parameter to get all the items when using listing methods:
 
 .. warning::
 
-   python-gitlab will iterate over the list by calling the corresponding API
-   multiple times. This might take some time if you have a lot of items to
-   retrieve. This might also consume a lot of memory as all the items will be
-   stored in RAM. If you're encountering the python recursion limit exception,
-   use ``safe_all=True`` instead to stop pagination automatically if the
-   recursion limit is hit.
+   With API v3 python-gitlab will iterate over the list by calling the
+   corresponding API multiple times. This might take some time if you have a
+   lot of items to retrieve. This might also consume a lot of memory as all the
+   items will be stored in RAM. If you're encountering the python recursion
+   limit exception, use ``safe_all=True`` to stop pagination automatically if
+   the recursion limit is hit.
 
-With v4, ``list()`` methods can also return a generator object which will
-handle the next calls to the API when required:
+With API v4, ``list()`` methods can also return a generator object which will
+handle the next calls to the API when required. This is the recommended way to
+iterate through a large number of items:
 
 .. code-block:: python
 
@@ -326,3 +327,26 @@ The following sample illustrates how to use a client-side certificate:
 
 Reference:
 http://docs.python-requests.org/en/master/user/advanced/#client-side-certificates
+
+Rate limits
+-----------
+
+python-gitlab will obey the rate limit of the GitLab server by default.
+On receiving a 429 response (Too Many Requests), python-gitlab will sleep for the amount of time
+in the Retry-After header, that GitLab sends back.
+
+If you don't want to wait, you can disable the rate-limiting feature, by supplying the
+``obey_rate_limit`` argument.
+
+.. code-block:: python
+
+   import gitlab
+   import requests
+
+   gl = gitlab.gitlab(url, token, api_version=4)
+   gl.projects.list(all=True, obey_rate_limit=False)
+
+
+.. warning::
+
+   You will get an Exception, if you then go over the rate limit of your GitLab instance.
