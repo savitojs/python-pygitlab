@@ -20,6 +20,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import argparse
+import os
+import tempfile
 
 import six
 try:
@@ -29,6 +31,7 @@ except ImportError:
 
 from gitlab import cli
 import gitlab.v3.cli
+import gitlab.v4.cli
 
 
 class TestCLI(unittest.TestCase):
@@ -52,6 +55,29 @@ class TestCLI(unittest.TestCase):
 
         self.assertEqual(test.exception.code, 1)
 
+    def test_parse_value(self):
+        ret = cli._parse_value('foobar')
+        self.assertEqual(ret, 'foobar')
+
+        ret = cli._parse_value(True)
+        self.assertEqual(ret, True)
+
+        ret = cli._parse_value(1)
+        self.assertEqual(ret, 1)
+
+        ret = cli._parse_value(None)
+        self.assertEqual(ret, None)
+
+        fd, temp_path = tempfile.mkstemp()
+        os.write(fd, b'content')
+        os.close(fd)
+        ret = cli._parse_value('@%s' % temp_path)
+        self.assertEqual(ret, 'content')
+        os.unlink(temp_path)
+
+        with self.assertRaises(SystemExit):
+            cli._parse_value('@/thisfileprobablydoesntexist')
+
     def test_base_parser(self):
         parser = cli._get_base_parser()
         args = parser.parse_args(['-v', '-g', 'gl_id',
@@ -59,6 +85,42 @@ class TestCLI(unittest.TestCase):
         self.assertTrue(args.verbose)
         self.assertEqual(args.gitlab, 'gl_id')
         self.assertEqual(args.config_file, ['foo.cfg', 'bar.cfg'])
+
+
+class TestV4CLI(unittest.TestCase):
+    def test_parse_args(self):
+        parser = cli._get_parser(gitlab.v4.cli)
+        args = parser.parse_args(['project', 'list'])
+        self.assertEqual(args.what, 'project')
+        self.assertEqual(args.action, 'list')
+
+    def test_parser(self):
+        parser = cli._get_parser(gitlab.v4.cli)
+        subparsers = None
+        for action in parser._actions:
+            if type(action) == argparse._SubParsersAction:
+                subparsers = action
+                break
+        self.assertIsNotNone(subparsers)
+        self.assertIn('project', subparsers.choices)
+
+        user_subparsers = None
+        for action in subparsers.choices['project']._actions:
+            if type(action) == argparse._SubParsersAction:
+                user_subparsers = action
+                break
+        self.assertIsNotNone(user_subparsers)
+        self.assertIn('list', user_subparsers.choices)
+        self.assertIn('get', user_subparsers.choices)
+        self.assertIn('delete', user_subparsers.choices)
+        self.assertIn('update', user_subparsers.choices)
+        self.assertIn('create', user_subparsers.choices)
+        self.assertIn('archive', user_subparsers.choices)
+        self.assertIn('unarchive', user_subparsers.choices)
+
+        actions = user_subparsers.choices['create']._option_string_actions
+        self.assertFalse(actions['--description'].required)
+        self.assertTrue(actions['--name'].required)
 
 
 class TestV3CLI(unittest.TestCase):

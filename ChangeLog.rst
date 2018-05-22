@@ -1,6 +1,38 @@
 ChangeLog
 =========
 
+Version 1.4.0_ - 2018-05-19
+---------------------------
+
+* Require requests>=2.4.2
+* ProjectKeys can be updated
+* Add support for unsharing projects (v3/v4)
+* [cli] fix listing for json and yaml output
+* Fix typos in documentation
+* Introduce RefreshMixin
+* [docs] Fix the time tracking examples
+* [docs] Commits: add an example of binary file creation
+* [cli] Allow to read args from files
+* Add support for recursive tree listing
+* [cli] Restore the --help option behavior
+* Add basic unit tests for v4 CLI
+* [cli] Fix listing of strings
+* Support downloading a single artifact file
+* Update docs copyright years
+* Implement attribute types to handle special cases
+* [docs] fix GitLab reference for notes
+* Expose additional properties for Gitlab objects
+* Fix the impersonation token deletion example
+* feat: obey the rate limit
+* Fix URL encoding on branch methods
+* [docs] add a code example for listing commits of a MR
+* [docs] update service.available() example for API v4
+* [tests] fix functional tests for python3
+* api-usage: bit more detail for listing with `all`
+* More efficient .get() for group members
+* Add docs for the `files` arg in http_*
+* Deprecate GetFromListMixin
+
 Version 1.3.0_ - 2018-02-18
 ---------------------------
 
@@ -32,7 +64,7 @@ Version 1.2.0_ - 2018-01-01
 * Add support for impersonation tokens API
 * Add support for user activities
 * Update user docs with gitlab URLs
-* [docs] Bad arguments in projetcs file documentation
+* [docs] Bad arguments in projects file documentation
 * Add support for user_agent_detail (issues)
 * Add a SetMixin
 * Add support for project housekeeping
@@ -464,7 +496,7 @@ Version 0.9.1_ - 2015-05-15
 Version 0.9_ - 2015-05-15
 --------------------------
 
-* Implement argparse libray for parsing argument on CLI
+* Implement argparse library for parsing argument on CLI
 * Provide unit tests and (a few) functional tests
 * Provide PEP8 tests
 * Use tox to run the tests
@@ -537,9 +569,9 @@ Version 0.3_ - 2013-08-27
 --------------------------
 
 * Use PRIVATE-TOKEN header for passing the auth token
-* provide a AUTHORS file
+* provide an AUTHORS file
 * cli: support ssl_verify config option
-* Add ssl_verify option to Gitlab object. Defauls to True
+* Add ssl_verify option to Gitlab object. Defaults to True
 * Correct url for merge requests API.
 
 Version 0.2_ - 2013-08-08
@@ -553,6 +585,7 @@ Version 0.1 - 2013-07-08
 
 * Initial release
 
+.. _1.4.0: https://github.com/python-gitlab/python-gitlab/compare/1.3.0...1.4.0
 .. _1.3.0: https://github.com/python-gitlab/python-gitlab/compare/1.2.0...1.3.0
 .. _1.2.0: https://github.com/python-gitlab/python-gitlab/compare/1.1.0...1.2.0
 .. _1.1.0: https://github.com/python-gitlab/python-gitlab/compare/1.0.2...1.1.0

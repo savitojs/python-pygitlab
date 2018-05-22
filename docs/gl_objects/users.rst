@@ -147,8 +147,8 @@ Create and use an impersonation token for a user:
 Revoke (delete) an impersonation token for a user:
 
 .. literalinclude:: users.py
-   :start-after: # it list
-   :end-before: # end it list
+   :start-after: # it delete
+   :end-before: # end it delete
 
 Current User
 ============
@@ -208,19 +208,19 @@ List GPG keys for a user:
    :start-after: # gpgkey list
    :end-before: # end gpgkey list
 
-Get an GPG gpgkey for a user:
+Get a GPG gpgkey for a user:
 
 .. literalinclude:: users.py
    :start-after: # gpgkey get
    :end-before: # end gpgkey get
 
-Create an GPG gpgkey for a user:
+Create a GPG gpgkey for a user:
 
 .. literalinclude:: users.py
    :start-after: # gpgkey create
    :end-before: # end gpgkey create
 
-Delete an GPG gpgkey for a user:
+Delete a GPG gpgkey for a user:
 
 .. literalinclude:: users.py
    :start-after: # gpgkey delete

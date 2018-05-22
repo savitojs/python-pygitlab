@@ -101,6 +101,10 @@ member.delete()
 project.share(group.id, gitlab.DEVELOPER_ACCESS)
 # end share
 
+# unshare
+project.unshare(group.id)
+# end unshare
+
 # hook list
 hooks = project.hooks.list()
 # end hook list
@@ -191,11 +195,13 @@ print(f.decode())
 
 # files create
 # v4
-f = project.files.create({'file_path': 'testfile',
+f = project.files.create({'file_path': 'testfile.txt',
                           'branch': 'master',
                           'content': file_content,
+                          'author_email': 'test@example.com',
+                          'author_name': 'yourname',
+                          'encoding': 'text',
                           'commit_message': 'Create testfile'})
-
 # v3
 f = project.files.create({'file_path': 'testfile',
                           'branch_name': 'master',
@@ -272,33 +278,6 @@ project.snippets.delete(snippet_id)
 snippet.delete()
 # end snippets delete
 
-# notes list
-i_notes = issue.notes.list()
-mr_notes = mr.notes.list()
-s_notes = snippet.notes.list()
-# end notes list
-
-# notes get
-i_note = issue.notes.get(note_id)
-mr_note = mr.notes.get(note_id)
-s_note = snippet.notes.get(note_id)
-# end notes get
-
-# notes create
-i_note = issue.notes.create({'body': 'note content'})
-mr_note = mr.notes.create({'body': 'note content'})
-s_note = snippet.notes.create({'body': 'note content'})
-# end notes create
-
-# notes update
-note.body = 'updated note content'
-note.save()
-# end notes update
-
-# notes delete
-note.delete()
-# end notes delete
-
 # service get
 # For v3
 service = project.services.get(service_name='asana', project_id=1)
@@ -309,7 +288,8 @@ print(service.active)
 # end service get
 
 # service list
-services = gl.project_services.available()
+services = gl.project_services.available()  # API v3
+services = project.services.available()  # API v4
 # end service list
 
 # service update

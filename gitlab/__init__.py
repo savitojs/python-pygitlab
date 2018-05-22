@@ -23,6 +23,7 @@ import inspect
 import itertools
 import json
 import re
+import time
 import warnings
 
 import requests
@@ -34,7 +35,7 @@ from gitlab.exceptions import *  # noqa
 from gitlab.v3.objects import *  # noqa
 
 __title__ = 'python-gitlab'
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 __author__ = 'Gauvain Pocentek'
 __email__ = 'gauvain@pocentek.net'
 __license__ = 'LGPL3'
@@ -78,6 +79,7 @@ class Gitlab(object):
 
         self._api_version = str(api_version)
         self._server_version = self._server_revision = None
+        self._base_url = url
         self._url = '%s/api/v%s' % (url, api_version)
         #: Timeout to use for requests to gitlab server
         self.timeout = timeout
@@ -165,7 +167,18 @@ class Gitlab(object):
         self._objects = objects
 
     @property
+    def url(self):
+        """The user-provided server URL."""
+        return self._base_url
+
+    @property
+    def api_url(self):
+        """The computed API base URL."""
+        return self._url
+
+    @property
     def api_version(self):
+        """The API version used (3 or 4)."""
         return self._api_version
 
     def _cls_to_manager_prefix(self, cls):
@@ -634,6 +647,7 @@ class Gitlab(object):
             post_data (dict): Data to send in the body (will be converted to
                               json)
             streamed (bool): Whether the data should be streamed
+            files (dict): The files to send to the server
             **kwargs: Extra data to make the query (e.g. sudo, per_page, page)
 
         Returns:
@@ -686,24 +700,35 @@ class Gitlab(object):
         prepped.url = sanitized_url(prepped.url)
         settings = self.session.merge_environment_settings(
             prepped.url, {}, streamed, verify, None)
-        result = self.session.send(prepped, timeout=timeout, **settings)
 
-        if 200 <= result.status_code < 300:
-            return result
+        # obey the rate limit by default
+        obey_rate_limit = kwargs.get("obey_rate_limit", True)
 
-        try:
-            error_message = result.json()['message']
-        except (KeyError, ValueError, TypeError):
-            error_message = result.content
+        while True:
+            result = self.session.send(prepped, timeout=timeout, **settings)
 
-        if result.status_code == 401:
-            raise GitlabAuthenticationError(response_code=result.status_code,
-                                            error_message=error_message,
-                                            response_body=result.content)
+            if 200 <= result.status_code < 300:
+                return result
 
-        raise GitlabHttpError(response_code=result.status_code,
-                              error_message=error_message,
-                              response_body=result.content)
+            if 429 == result.status_code and obey_rate_limit:
+                wait_time = int(result.headers["Retry-After"])
+                time.sleep(wait_time)
+                continue
+
+            try:
+                error_message = result.json()['message']
+            except (KeyError, ValueError, TypeError):
+                error_message = result.content
+
+            if result.status_code == 401:
+                raise GitlabAuthenticationError(
+                    response_code=result.status_code,
+                    error_message=error_message,
+                    response_body=result.content)
+
+            raise GitlabHttpError(response_code=result.status_code,
+                                  error_message=error_message,
+                                  response_body=result.content)
 
     def http_get(self, path, query_data={}, streamed=False, **kwargs):
         """Make a GET request to the Gitlab server.
@@ -785,6 +810,7 @@ class Gitlab(object):
             query_data (dict): Data to send as query parameters
             post_data (dict): Data to send in the body (will be converted to
                               json)
+            files (dict): The files to send to the server
             **kwargs: Extra data to make the query (e.g. sudo, per_page, page)
 
         Returns:
