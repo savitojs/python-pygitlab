@@ -1,5 +1,8 @@
 import base64
+import os
 import time
+
+import requests
 
 import gitlab
 
@@ -49,12 +52,21 @@ nxs4TLO3kZjUTgWKdhpgRNF5hwaz51ZjpebaRf/ZqRuNyX4lIRolDxzOn/+O1o8L
 qG2ZdhHHmSK2LaQLFiSprUkikStNU9BqSQ==
 =5OGa
 -----END PGP PUBLIC KEY BLOCK-----'''
+AVATAR_PATH = os.path.join(os.path.dirname(__file__), 'avatar.png')
 
 
 # token authentication from config file
 gl = gitlab.Gitlab.from_config(config_files=['/tmp/python-gitlab.cfg'])
 gl.auth()
 assert(isinstance(gl.user, gitlab.v4.objects.CurrentUser))
+
+# markdown (need to wait for gitlab 11 to enable the test)
+# html = gl.markdown('foo')
+# assert('foo' in html)
+
+success, errors = gl.lint('Invalid')
+assert(success is False)
+assert(errors)
 
 # sidekiq
 out = gl.sidekiq.queue_metrics()
@@ -81,7 +93,11 @@ assert(settings.default_projects_limit == 42)
 
 # users
 new_user = gl.users.create({'email': 'foo@bar.com', 'username': 'foo',
-                            'name': 'foo', 'password': 'foo_password'})
+                            'name': 'foo', 'password': 'foo_password',
+                            'avatar': open(AVATAR_PATH, 'rb')})
+avatar_url = new_user.avatar_url.replace('gitlab.test', 'localhost:8080')
+uploaded_avatar = requests.get(avatar_url).content
+assert(uploaded_avatar == open(AVATAR_PATH, 'rb').read())
 users_list = gl.users.list()
 for user in users_list:
     if user.username == 'foo':
@@ -214,12 +230,12 @@ assert(len(gl.groups.list(search='oup1')) == 1)
 assert(group3.parent_id == p_id)
 assert(group2.subgroups.list()[0].id == group3.id)
 
-group1.members.create({'access_level': gitlab.Group.OWNER_ACCESS,
+group1.members.create({'access_level': gitlab.const.OWNER_ACCESS,
                        'user_id': user1.id})
-group1.members.create({'access_level': gitlab.Group.GUEST_ACCESS,
+group1.members.create({'access_level': gitlab.const.GUEST_ACCESS,
                        'user_id': user2.id})
 
-group2.members.create({'access_level': gitlab.Group.OWNER_ACCESS,
+group2.members.create({'access_level': gitlab.const.OWNER_ACCESS,
                        'user_id': user2.id})
 
 # Administrator belongs to the groups
@@ -229,10 +245,10 @@ assert(len(group2.members.list()) == 2)
 group1.members.delete(user1.id)
 assert(len(group1.members.list()) == 2)
 member = group1.members.get(user2.id)
-member.access_level = gitlab.Group.OWNER_ACCESS
+member.access_level = gitlab.const.OWNER_ACCESS
 member.save()
 member = group1.members.get(user2.id)
-assert(member.access_level == gitlab.Group.OWNER_ACCESS)
+assert(member.access_level == gitlab.const.OWNER_ACCESS)
 
 group2.members.delete(gl.user.id)
 
@@ -257,6 +273,18 @@ settings.level = 'disabled'
 settings.save()
 settings = group2.notificationsettings.get()
 assert(settings.level == 'disabled')
+
+# group badges
+badge_image = 'http://example.com'
+badge_link = 'http://example/img.svg'
+badge = group2.badges.create({'link_url': badge_link, 'image_url': badge_image})
+assert(len(group2.badges.list()) == 1)
+badge.image_url = 'http://another.example.com'
+badge.save()
+badge = group2.badges.get(badge.id)
+assert(badge.image_url == 'http://another.example.com')
+badge.delete()
+assert(len(group2.badges.list()) == 0)
 
 # group milestones
 gm1 = group1.milestones.create({'title': 'groupmilestone1'})
@@ -336,7 +364,7 @@ admin_project.files.create({'file_path': 'README',
                             'content': 'Initial content',
                             'commit_message': 'Initial commit'})
 readme = admin_project.files.get(file_path='README', ref='master')
-readme.content = base64.b64encode(b"Improved README")
+readme.content = base64.b64encode(b"Improved README").decode()
 time.sleep(2)
 readme.save(branch="master", commit_message="new commit")
 readme.delete(commit_message="Removing README", branch="master")
@@ -346,7 +374,9 @@ admin_project.files.create({'file_path': 'README.rst',
                             'content': 'Initial content',
                             'commit_message': 'New commit'})
 readme = admin_project.files.get(file_path='README.rst', ref='master')
-assert(readme.decode() == 'Initial content')
+# The first decode() is the ProjectFile method, the second one is the bytes
+# object method
+assert(readme.decode().decode() == 'Initial content')
 
 data = {
     'branch': 'master',
@@ -367,9 +397,26 @@ commit = admin_project.commits.list()[0]
 status = commit.statuses.create({'state': 'success', 'sha': commit.id})
 assert(len(commit.statuses.list()) == 1)
 
+assert(commit.refs())
+assert(commit.merge_requests() is not None)
+
 # commit comment
 commit.comments.create({'note': 'This is a commit comment'})
 assert(len(commit.comments.list()) == 1)
+
+# commit discussion
+count = len(commit.discussions.list())
+discussion = commit.discussions.create({'body': 'Discussion body'})
+assert(len(commit.discussions.list()) == (count + 1))
+d_note = discussion.notes.create({'body': 'first note'})
+d_note_from_get = discussion.notes.get(d_note.id)
+d_note_from_get.body = 'updated body'
+d_note_from_get.save()
+discussion = commit.discussions.get(discussion.id)
+assert(discussion.attributes['notes'][-1]['body'] == 'updated body')
+d_note_from_get.delete()
+discussion = commit.discussions.get(discussion.id)
+assert(len(discussion.attributes['notes']) == 1)
 
 # housekeeping
 admin_project.housekeeping()
@@ -380,10 +427,11 @@ assert(len(tree) != 0)
 assert(tree[0]['name'] == 'README.rst')
 blob_id = tree[0]['id']
 blob = admin_project.repository_raw_blob(blob_id)
-assert(blob == 'Initial content')
+assert(blob.decode() == 'Initial content')
 archive1 = admin_project.repository_archive()
 archive2 = admin_project.repository_archive('master')
 assert(archive1 == archive2)
+snapshot = admin_project.snapshot()
 
 # project file uploads
 filename = "test.txt"
@@ -402,11 +450,12 @@ admin_project.environments.create({'name': 'env1', 'external_url':
                                    'http://fake.env/whatever'})
 envs = admin_project.environments.list()
 assert(len(envs) == 1)
-env = admin_project.environments.get(envs[0].id)
+env = envs[0]
 env.external_url = 'http://new.env/whatever'
 env.save()
-env = admin_project.environments.get(envs[0].id)
+env = admin_project.environments.list()[0]
 assert(env.external_url == 'http://new.env/whatever')
+env.stop()
 env.delete()
 assert(len(admin_project.environments.list()) == 0)
 
@@ -439,7 +488,7 @@ assert(len(sudo_project.keys.list()) == 0)
 
 # labels
 label1 = admin_project.labels.create({'name': 'label1', 'color': '#778899'})
-label1 = admin_project.labels.get('label1')
+label1 = admin_project.labels.list()[0]
 assert(len(admin_project.labels.list()) == 1)
 label1.new_name = 'label1updated'
 label1.save()
@@ -484,6 +533,21 @@ note.delete()
 assert(len(issue1.notes.list()) == 0)
 assert(isinstance(issue1.user_agent_detail(), dict))
 
+assert(issue1.user_agent_detail()['user_agent'])
+assert(issue1.participants())
+
+discussion = issue1.discussions.create({'body': 'Discussion body'})
+assert(len(issue1.discussions.list()) == 1)
+d_note = discussion.notes.create({'body': 'first note'})
+d_note_from_get = discussion.notes.get(d_note.id)
+d_note_from_get.body = 'updated body'
+d_note_from_get.save()
+discussion = issue1.discussions.get(discussion.id)
+assert(discussion.attributes['notes'][-1]['body'] == 'updated body')
+d_note_from_get.delete()
+discussion = issue1.discussions.get(discussion.id)
+assert(len(discussion.attributes['notes']) == 1)
+
 # tags
 tag1 = admin_project.tags.create({'tag_name': 'v1.0', 'ref': 'master'})
 assert(len(admin_project.tags.list()) == 1)
@@ -499,10 +563,25 @@ snippet = admin_project.snippets.create(
     {'title': 'snip1', 'file_name': 'foo.py', 'code': 'initial content',
      'visibility': gitlab.v4.objects.VISIBILITY_PRIVATE}
 )
+
+assert(snippet.user_agent_detail()['user_agent'])
+
+discussion = snippet.discussions.create({'body': 'Discussion body'})
+assert(len(snippet.discussions.list()) == 1)
+d_note = discussion.notes.create({'body': 'first note'})
+d_note_from_get = discussion.notes.get(d_note.id)
+d_note_from_get.body = 'updated body'
+d_note_from_get.save()
+discussion = snippet.discussions.get(discussion.id)
+assert(discussion.attributes['notes'][-1]['body'] == 'updated body')
+d_note_from_get.delete()
+discussion = snippet.discussions.get(discussion.id)
+assert(len(discussion.attributes['notes']) == 1)
+
 snippet.file_name = 'bar.py'
 snippet.save()
 snippet = admin_project.snippets.get(snippet.id)
-assert(snippet.content() == 'initial content')
+assert(snippet.content().decode() == 'initial content')
 assert(snippet.file_name == 'bar.py')
 size = len(admin_project.snippets.list())
 snippet.delete()
@@ -533,10 +612,23 @@ mr = admin_project.mergerequests.create({'source_branch': 'branch1',
                                          'target_branch': 'master',
                                          'title': 'MR readme2'})
 
+# discussion
+discussion = mr.discussions.create({'body': 'Discussion body'})
+assert(len(mr.discussions.list()) == 1)
+d_note = discussion.notes.create({'body': 'first note'})
+d_note_from_get = discussion.notes.get(d_note.id)
+d_note_from_get.body = 'updated body'
+d_note_from_get.save()
+discussion = mr.discussions.get(discussion.id)
+assert(discussion.attributes['notes'][-1]['body'] == 'updated body')
+d_note_from_get.delete()
+discussion = mr.discussions.get(discussion.id)
+assert(len(discussion.attributes['notes']) == 1)
+
 # basic testing: only make sure that the methods exist
 mr.commits()
 mr.changes()
-#mr.participants()  # not yet available
+assert(mr.participants())
 
 mr.merge()
 admin_project.branches.delete('branch1')
@@ -575,6 +667,18 @@ assert(admin_project.star_count == 0)
 #lists = board.lists.list()
 #assert(len(lists) == begin_size - 1)
 
+# project badges
+badge_image = 'http://example.com'
+badge_link = 'http://example/img.svg'
+badge = admin_project.badges.create({'link_url': badge_link, 'image_url': badge_image})
+assert(len(admin_project.badges.list()) == 1)
+badge.image_url = 'http://another.example.com'
+badge.save()
+badge = admin_project.badges.get(badge.id)
+assert(badge.image_url == 'http://another.example.com')
+badge.delete()
+assert(len(admin_project.badges.list()) == 0)
+
 # project wiki
 wiki_content = 'Wiki page content'
 wp = admin_project.wikis.create({'title': 'wikipage', 'content': wiki_content})
@@ -597,6 +701,8 @@ assert(ns.kind == 'user')
 feat = gl.features.set('foo', 30)
 assert(feat.name == 'foo')
 assert(len(gl.features.list()) == 1)
+feat.delete()
+assert(len(gl.features.list()) == 0)
 
 # broadcast messages
 msg = gl.broadcastmessages.create({'message': 'this is the message'})
@@ -637,8 +743,13 @@ snippet.save()
 snippet = gl.snippets.get(snippet.id)
 assert(snippet.title == 'updated_title')
 content = snippet.content()
-assert(content == 'import gitlab')
+assert(content.decode() == 'import gitlab')
+
+assert(snippet.user_agent_detail()['user_agent'])
+
 snippet.delete()
+snippets = gl.snippets.list(all=True)
+assert(len(snippets) == 0)
 
 # user activities
 gl.user_activities.list()
@@ -666,7 +777,31 @@ for i in range(20, 40):
     except gitlab.GitlabCreateError as e:
         error_message = e.error_message
         break
-assert 'Retry later' in error_message
+assert 'Retry later' in error_message.decode()
 [current_project.delete() for current_project in projects]
 settings.throttle_authenticated_api_enabled = False
 settings.save()
+
+# project import/export
+ex = admin_project.exports.create({})
+ex.refresh()
+count = 0
+while ex.export_status != 'finished':
+    time.sleep(1)
+    ex.refresh()
+    count += 1
+    if count == 10:
+        raise Exception('Project export taking too much time')
+with open('/tmp/gitlab-export.tgz', 'wb') as f:
+    ex.download(streamed=True, action=f.write)
+
+output = gl.projects.import_project(open('/tmp/gitlab-export.tgz', 'rb'),
+                               'imported_project')
+project_import = gl.projects.get(output['id'], lazy=True).imports.get()
+count = 0
+while project_import.import_status != 'finished':
+    time.sleep(1)
+    project_import.refresh()
+    count += 1
+    if count == 10:
+        raise Exception('Project import taking too much time')
