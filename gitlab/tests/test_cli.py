@@ -22,15 +22,26 @@ from __future__ import absolute_import
 import argparse
 import os
 import tempfile
+try:
+    from contextlib import redirect_stderr  # noqa: H302
+except ImportError:
+    from contextlib import contextmanager  # noqa: H302
+    import sys
 
-import six
+    @contextmanager
+    def redirect_stderr(new_target):
+        old_target, sys.stderr = sys.stderr, new_target
+        yield
+        sys.stderr = old_target
+
 try:
     import unittest
 except ImportError:
     import unittest2 as unittest
 
+import six
+
 from gitlab import cli
-import gitlab.v3.cli
 import gitlab.v4.cli
 
 
@@ -50,9 +61,11 @@ class TestCLI(unittest.TestCase):
         self.assertEqual("class", cli.cls_to_what(Class))
 
     def test_die(self):
-        with self.assertRaises(SystemExit) as test:
-            cli.die("foobar")
-
+        fl = six.StringIO()
+        with redirect_stderr(fl):
+            with self.assertRaises(SystemExit) as test:
+                cli.die("foobar")
+        self.assertEqual(fl.getvalue(), "foobar\n")
         self.assertEqual(test.exception.code, 1)
 
     def test_parse_value(self):
@@ -75,8 +88,14 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(ret, 'content')
         os.unlink(temp_path)
 
-        with self.assertRaises(SystemExit):
-            cli._parse_value('@/thisfileprobablydoesntexist')
+        fl = six.StringIO()
+        with redirect_stderr(fl):
+            with self.assertRaises(SystemExit) as exc:
+                cli._parse_value('@/thisfileprobablydoesntexist')
+            self.assertEqual(fl.getvalue(),
+                             "[Errno 2] No such file or directory:"
+                             " '/thisfileprobablydoesntexist'\n")
+            self.assertEqual(exc.exception.code, 1)
 
     def test_base_parser(self):
         parser = cli._get_base_parser()
@@ -120,45 +139,11 @@ class TestV4CLI(unittest.TestCase):
 
         actions = user_subparsers.choices['create']._option_string_actions
         self.assertFalse(actions['--description'].required)
-        self.assertTrue(actions['--name'].required)
-
-
-class TestV3CLI(unittest.TestCase):
-    def test_parse_args(self):
-        parser = cli._get_parser(gitlab.v3.cli)
-        args = parser.parse_args(['project', 'list'])
-        self.assertEqual(args.what, 'project')
-        self.assertEqual(args.action, 'list')
-
-    def test_parser(self):
-        parser = cli._get_parser(gitlab.v3.cli)
-        subparsers = None
-        for action in parser._actions:
-            if type(action) == argparse._SubParsersAction:
-                subparsers = action
-                break
-        self.assertIsNotNone(subparsers)
-        self.assertIn('user', subparsers.choices)
 
         user_subparsers = None
-        for action in subparsers.choices['user']._actions:
+        for action in subparsers.choices['group']._actions:
             if type(action) == argparse._SubParsersAction:
                 user_subparsers = action
                 break
-        self.assertIsNotNone(user_subparsers)
-        self.assertIn('list', user_subparsers.choices)
-        self.assertIn('get', user_subparsers.choices)
-        self.assertIn('delete', user_subparsers.choices)
-        self.assertIn('update', user_subparsers.choices)
-        self.assertIn('create', user_subparsers.choices)
-        self.assertIn('block', user_subparsers.choices)
-        self.assertIn('unblock', user_subparsers.choices)
-
         actions = user_subparsers.choices['create']._option_string_actions
-        self.assertFalse(actions['--twitter'].required)
-        self.assertTrue(actions['--username'].required)
-
-    def test_extra_actions(self):
-        for cls, data in six.iteritems(gitlab.v3.cli.EXTRA_ACTIONS):
-            for key in data:
-                self.assertIsInstance(data[key], dict)
+        self.assertTrue(actions['--name'].required)
