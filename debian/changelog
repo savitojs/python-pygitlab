@@ -1,8 +1,8 @@
-python-gitlab (1:1.4.0-1) UNRELEASED; urgency=medium
+python-gitlab (1:1.5.1-1) UNRELEASED; urgency=medium
 
-  * New upstream release
+  * New upstream release (Closes: #904149)
 
- -- Federico Ceratto <federico@debian.org>  Tue, 22 May 2018 22:22:42 +0100
+ -- Federico Ceratto <federico@debian.org>  Sat, 21 Jul 2018 20:26:56 +0100
 
 python-gitlab (1:1.3.0-2) unstable; urgency=medium
 
