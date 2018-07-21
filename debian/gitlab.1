@@ -1,0 +1,42 @@
+.TH GITLAB "1" "2018" "gitlab" "User Commands"
+.SH NAME
+gitlab \- GitLab API client
+.SH DESCRIPTION
+usage: gitlab [\-h] [\-\-version] [\-v] [\-d] [\-c CONFIG_FILE] [\-g GITLAB]
+.IP
+[\-o {json,legacy,yaml}] [\-f FIELDS]
+{application\-settings,broadcast\-message,current\-user,current\-user\-email,current\-user\-gp\-gkey,current\-user\-key,deploy\-key,dockerfile,event,feature,geo\-node,gitignore,gitlabciyml,group,group\-access\-request,group\-badge,group\-board,group\-board\-list,group\-custom\-attribute,group\-epic,group\-epic\-issue,group\-issue,group\-member,group\-milestone,group\-notification\-settings,group\-project,group\-subgroup,group\-variable,hook,issue,l\-da\-pgroup,license,namespace,notification\-settings,pages\-domain,project,project\-access\-request,project\-approval,project\-badge,project\-board,project\-board\-list,project\-branch,project\-commit,project\-commit\-comment,project\-commit\-discussion,project\-commit\-discussion\-note,project\-commit\-status,project\-custom\-attribute,project\-deployment,project\-environment,project\-event,project\-export,project\-file,project\-fork,project\-hook,project\-import,project\-issue,project\-issue\-award\-emoji,project\-issue\-discussion,project\-issue\-discussion\-note,project\-issue\-link,project\-issue\-note,project\-issue\-note\-award\-emoji,project\-job,project\-key,project\-label,project\-member,project\-merge\-request,project\-merge\-request\-approval,project\-merge\-request\-award\-emoji,project\-merge\-request\-diff,project\-merge\-request\-discussion,project\-merge\-request\-discussion\-note,project\-merge\-request\-note,project\-merge\-request\-note\-award\-emoji,project\-milestone,project\-note,project\-notification\-settings,project\-pages\-domain,project\-pipeline,project\-pipeline\-job,project\-pipeline\-schedule,project\-pipeline\-schedule\-variable,project\-protected\-branch,project\-push\-rules,project\-runner,project\-service,project\-snippet,project\-snippet\-award\-emoji,project\-snippet\-discussion,project\-snippet\-discussion\-note,project\-snippet\-note,project\-snippet\-note\-award\-emoji,project\-tag,project\-trigger,project\-user,project\-variable,project\-wiki,runner,runner\-job,snippet,todo,user,user\-activities,user\-custom\-attribute,user\-email,user\-event,user\-gp\-gkey,user\-impersonation\-token,user\-key,user\-project}
+\&...
+.PP
+GitLab API Command Line Interface
+.SS "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-version\fR
+Display the version.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR, \fB\-\-fancy\fR
+Verbose mode (legacy format only)
+.TP
+\fB\-d\fR, \fB\-\-debug\fR
+Debug mode (display HTTP requests)
+.TP
+\fB\-c\fR CONFIG_FILE, \fB\-\-config\-file\fR CONFIG_FILE
+Configuration file to use. Can be used multiple times.
+.TP
+\fB\-g\fR GITLAB, \fB\-\-gitlab\fR GITLAB
+Which configuration section should be used. If not
+defined, the default selection will be used.
+.TP
+\fB\-o\fR {json,legacy,yaml}, \fB\-\-output\fR {json,legacy,yaml}
+Output format (v4 only): json|legacy|yaml
+.TP
+\fB\-f\fR FIELDS, \fB\-\-fields\fR FIELDS
+Fields to display in the output (comma separated). Not
+used with legacy output
+.SS "object:"
+.TP
+{application\-settings,broadcast\-message,current\-user,current\-user\-email,current\-user\-gp\-gkey,current\-user\-key,deploy\-key,dockerfile,event,feature,geo\-node,gitignore,gitlabciyml,group,group\-access\-request,group\-badge,group\-board,group\-board\-list,group\-custom\-attribute,group\-epic,group\-epic\-issue,group\-issue,group\-member,group\-milestone,group\-notification\-settings,group\-project,group\-subgroup,group\-variable,hook,issue,l\-da\-pgroup,license,namespace,notification\-settings,pages\-domain,project,project\-access\-request,project\-approval,project\-badge,project\-board,project\-board\-list,project\-branch,project\-commit,project\-commit\-comment,project\-commit\-discussion,project\-commit\-discussion\-note,project\-commit\-status,project\-custom\-attribute,project\-deployment,project\-environment,project\-event,project\-export,project\-file,project\-fork,project\-hook,project\-import,project\-issue,project\-issue\-award\-emoji,project\-issue\-discussion,project\-issue\-discussion\-note,project\-issue\-link,project\-issue\-note,project\-issue\-note\-award\-emoji,project\-job,project\-key,project\-label,project\-member,project\-merge\-request,project\-merge\-request\-approval,project\-merge\-request\-award\-emoji,project\-merge\-request\-diff,project\-merge\-request\-discussion,project\-merge\-request\-discussion\-note,project\-merge\-request\-note,project\-merge\-request\-note\-award\-emoji,project\-milestone,project\-note,project\-notification\-settings,project\-pages\-domain,project\-pipeline,project\-pipeline\-job,project\-pipeline\-schedule,project\-pipeline\-schedule\-variable,project\-protected\-branch,project\-push\-rules,project\-runner,project\-service,project\-snippet,project\-snippet\-award\-emoji,project\-snippet\-discussion,project\-snippet\-discussion\-note,project\-snippet\-note,project\-snippet\-note\-award\-emoji,project\-tag,project\-trigger,project\-user,project\-variable,project\-wiki,runner,runner\-job,snippet,todo,user,user\-activities,user\-custom\-attribute,user\-email,user\-event,user\-gp\-gkey,user\-impersonation\-token,user\-key,user\-project}
+Object to manipulate.
