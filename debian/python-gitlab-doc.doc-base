@@ -5,5 +5,5 @@ Abstract: Python GitLab API client
 Section: Programming/Python
 
 Format: HTML
-Index: /usr/share/doc/python-gitlab/html/index.html
-Files: /usr/share/doc/python-gitlab/html/*
+Index: /usr/share/doc/python-gitlab-doc/html/index.html
+Files: /usr/share/doc/python-gitlab-doc/html/*

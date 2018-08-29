@@ -2,18 +2,16 @@ Source: python-gitlab
 Maintainer: Federico Ceratto <federico@debian.org>
 Section: python
 Priority: optional
-Build-Depends: debhelper (>= 11)
+Build-Depends: debhelper (>= 10)
 Build-Depends-Indep:
  dh-python,
  python-all,
  python-doc,
- python-httmock,
  python-mock,
  python-requests,
  python-setuptools (>= 0.6b3),
  python-sphinx,
  python3-all,
- python3-httmock,
  python3-mock,
  python3-requests,
  python3-setuptools,
