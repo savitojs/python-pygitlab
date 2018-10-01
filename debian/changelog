@@ -1,6 +1,7 @@
 python-gitlab (1:1.6.0-2) UNRELEASED; urgency=medium
 
   * d/control: Remove ancient X-Python-Version field
+  * Use 'python3 -m sphinx' instead of sphinx-build for building docs
 
  -- Ondřej Nový <onovy@debian.org>  Mon, 01 Oct 2018 10:19:54 +0200
 
