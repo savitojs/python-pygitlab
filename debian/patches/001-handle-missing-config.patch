@@ -1,0 +1,26 @@
+From: Federico Ceratto <federico@debian.org>
+Subject: Handle missing config file
+Forwarded: no
+
+--- a/gitlab/cli.py
++++ b/gitlab/cli.py
+@@ -140,8 +140,17 @@
+     # any subparser setup
+     (options, args) = parser.parse_known_args(sys.argv)
+ 
+-    config = gitlab.config.GitlabConfigParser(options.gitlab,
+-                                              options.config_file)
++    try:
++        config = gitlab.config.GitlabConfigParser(options.gitlab,
++                                                options.config_file)
++    except gitlab.config.ConfigError as e:
++        if "Impossible to get the gitlab id" in str(e):
++            sys.exit("""
++Please create a configuration file at ~/.python-gitlab.cfg
++See /usr/share/doc/gitlab-cli/examples/python-gitlab.cfg
++""")
++        sys.exit(e)
++
+     cli_module = importlib.import_module('gitlab.v%s.cli' % config.api_version)
+ 
+     # Now we build the entire set of subcommands and do the complete parsing
