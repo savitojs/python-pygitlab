@@ -1,3 +1,9 @@
+python-gitlab (1:1.6.0-3) UNRELEASED; urgency=medium
+
+  * gitlab-cli: rename executable to python-gitlab (Closes: #910229)
+
+ -- Federico Ceratto <federico@debian.org>  Tue, 27 Nov 2018 20:05:56 +0000
+
 python-gitlab (1:1.6.0-2) unstable; urgency=medium
 
   [ Ondřej Nový ]

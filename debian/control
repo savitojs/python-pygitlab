@@ -53,4 +53,5 @@ Architecture: all
 Section: utils
 Depends: ${misc:Depends}, python3, python3-gitlab (= ${binary:Version})
 Description: GitLab command-line client
- Command-line tool to interact with GitLab v4 server API.
+ Command-line tool to interact with the GitLab v4 server API.
+ The executable is named python-gitlab.
