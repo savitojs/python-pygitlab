@@ -25,7 +25,7 @@ override_dh_auto_install:
 	# Remove the script from the Python 2 package and move it to gitlab-cli
 	rm debian/python-gitlab/usr/bin/gitlab
 	mkdir -p debian/gitlab-cli/usr/bin
-	mv debian/python3-gitlab/usr/bin/gitlab debian/gitlab-cli/usr/bin/
+	mv debian/python3-gitlab/usr/bin/gitlab debian/gitlab-cli/usr/bin/python-gitlab
 
 override_dh_installchangelogs:
 	dh_installchangelogs ChangeLog.rst
