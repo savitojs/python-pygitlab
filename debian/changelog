@@ -1,9 +1,9 @@
-python-gitlab (1:1.6.0-3) UNRELEASED; urgency=medium
+python-gitlab (1:1.6.0-3) unstable; urgency=medium
 
   * gitlab-cli: rename executable to python-gitlab (Closes: #910229)
   * Handle missing config file (Closes: #912537)
 
- -- Federico Ceratto <federico@debian.org>  Tue, 27 Nov 2018 20:05:56 +0000
+ -- Federico Ceratto <federico@debian.org>  Tue, 27 Nov 2018 21:41:09 +0000
 
 python-gitlab (1:1.6.0-2) unstable; urgency=medium
 
