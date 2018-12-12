@@ -31,7 +31,7 @@ from gitlab.exceptions import *  # noqa
 from gitlab import utils  # noqa
 
 __title__ = 'python-gitlab'
-__version__ = '1.6.0'
+__version__ = '1.7.0'
 __author__ = 'Gauvain Pocentek'
 __email__ = 'gauvain@pocentek.net'
 __license__ = 'LGPL3'
@@ -411,7 +411,7 @@ class Gitlab(object):
                 if item.status_code not in (301, 302):
                     continue
                 # GET methods can be redirected without issue
-                if result.request.method == 'GET':
+                if item.request.method == 'GET':
                     continue
                 # Did we end-up with an https:// URL?
                 location = item.headers.get('Location', None)
@@ -490,10 +490,14 @@ class Gitlab(object):
                 time.sleep(wait_time)
                 continue
 
+            error_message = result.content
             try:
-                error_message = result.json()['message']
+                error_json = result.json()
+                for k in ('message', 'error'):
+                    if k in error_json:
+                        error_message = error_json[k]
             except (KeyError, ValueError, TypeError):
-                error_message = result.content
+                pass
 
             if result.status_code == 401:
                 raise GitlabAuthenticationError(

@@ -2,7 +2,7 @@
 Getting started with the API
 ############################
 
-python-gitlab supports both GitLab v3 and v4 APIs. To use the v3 make sure to
+python-gitlab supports both GitLab v3 and v4 APIs.
 
 .. note::
 
@@ -42,6 +42,11 @@ You can also use configuration files to create ``gitlab.Gitlab`` objects:
 
 See the :ref:`cli_configuration` section for more information about
 configuration files.
+
+.. warning::
+
+   If the GitLab server you are using redirects requests from http to https,
+   make sure to use the ``https://`` protocol in the URL definition.
 
 Note on password authentication
 -------------------------------
@@ -187,7 +192,7 @@ parameter to get all the items when using listing methods:
 .. code-block:: python
 
    all_groups = gl.groups.list(all=True)
-   all_owned_projects = gl.projects.owned(all=True)
+   all_owned_projects = gl.projects.list(owned=True, all=True)
 
 You can define the ``per_page`` value globally to avoid passing it to every
 ``list()`` method call:

@@ -78,6 +78,11 @@ parameters. You can override the values in each GitLab server section.
 
 You must define the ``url`` in each GitLab server section.
 
+.. warning::
+
+   If the GitLab server you are using redirects requests from http to https,
+   make sure to use the ``https://`` protocol in the ``url`` definition.
+
 Only one of ``private_token`` or ``oauth_token`` should be defined. If neither
 are defined an anonymous request will be sent to the Gitlab server, with very
 limited permissions.
@@ -151,6 +156,11 @@ These options must be defined before the mandatory arguments.
 
 ``--output``, ``-o``
     Output format. Defaults to a custom format. Can also be ``yaml`` or ``json``.
+
+    **Notice:**
+
+        The `PyYAML package <https://pypi.org/project/PyYAML/>`_ is required to use the yaml output option.
+        You need to install it separately using ``pip install PyYAML``
 
 ``--fields``, ``-f``
     Comma-separated list of fields to display (``yaml`` and ``json`` output
