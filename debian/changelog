@@ -1,9 +1,27 @@
+python-gitlab (1:1.6.0-3) unstable; urgency=medium
+
+  * gitlab-cli: rename executable to python-gitlab (Closes: #910229)
+  * Handle missing config file (Closes: #912537)
+
+ -- Federico Ceratto <federico@debian.org>  Tue, 27 Nov 2018 21:41:09 +0000
+
 python-gitlab (1:1.6.0-2~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports (Closes: #903234)
   * Remove non available test dependencies, disable tests
 
  -- Federico Ceratto <federico@debian.org>  Wed, 29 Aug 2018 22:57:15 +0100
+
+python-gitlab (1:1.6.0-2) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/control: Remove ancient X-Python-Version field
+  * Use 'python3 -m sphinx' instead of sphinx-build for building docs
+
+  [ Federico Ceratto ]
+  * Set Conflicts: ruby-gitlab header (Closes: #910229)
+
+ -- Federico Ceratto <federico@debian.org>  Sat, 03 Nov 2018 12:28:55 +0000
 
 python-gitlab (1:1.6.0-1) unstable; urgency=medium
 

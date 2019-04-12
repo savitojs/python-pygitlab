@@ -3,11 +3,10 @@ Upstream-Name: python-gitlab
 Source: https://github.com/python-gitlab/python-gitlab
 
 Files: *
-Copyright: 2013-2017, Gauvain Pocentek <gauvain@pocentek.net>
+Copyright: 2013-2018, Gauvain Pocentek <gauvain@pocentek.net>
 License: LGPL-3+
 
 Files: gitlab/tests/test_gitlab.py
-       gitlab/tests/test_gitlabobject.py
        gitlab/tests/test_mixins.py
 Copyright: 2014, Mika Mäenpää <mika.j.maenpaa@tut.fi>
 License: LGPL-3+
