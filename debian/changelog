@@ -1,3 +1,9 @@
+python-gitlab (1:1.6.0-3~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports.
+
+ -- Andreas Tille <tille@debian.org>  Fri, 12 Apr 2019 10:02:51 +0200
+
 python-gitlab (1:1.6.0-3) unstable; urgency=medium
 
   * gitlab-cli: rename executable to python-gitlab (Closes: #910229)
