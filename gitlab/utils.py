@@ -42,12 +42,16 @@ def copy_dict(dest, src):
             # custom_attributes: {'foo', 'bar'} =>
             #   "custom_attributes['foo']": "bar"
             for dict_k, dict_v in v.items():
-                dest['%s[%s]' % (k, dict_k)] = dict_v
+                dest["%s[%s]" % (k, dict_k)] = dict_v
         else:
             dest[k] = v
 
 
+def clean_str_id(id):
+    return id.replace("/", "%2F").replace("#", "%23")
+
+
 def sanitized_url(url):
     parsed = six.moves.urllib.parse.urlparse(url)
-    new_path = parsed.path.replace('.', '%2E')
+    new_path = parsed.path.replace(".", "%2E")
     return parsed._replace(path=new_path).geturl()

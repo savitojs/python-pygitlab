@@ -4,6 +4,34 @@ Release notes
 
 This page describes important changes between python-gitlab releases.
 
+Changes from 1.8 to 1.9
+=======================
+
+* ``ProjectMemberManager.all()`` and ``GroupMemberManager.all()`` now return a
+  list of ``ProjectMember`` and ``GroupMember`` objects respectively, instead
+  of a list of dicts.
+
+Changes from 1.7 to 1.8
+=======================
+
+* You can now use the ``query_parameters`` argument in method calls to define
+  arguments to send to the GitLab server. This allows to avoid conflicts
+  between python-gitlab and GitLab server variables, and allows to use the
+  python reserved keywords as GitLab arguments.
+
+  The following examples make the same GitLab request with the 2 syntaxes::
+
+     projects = gl.projects.list(owned=True, starred=True)
+     projects = gl.projects.list(query_parameters={'owned': True, 'starred': True})
+
+  The following example only works with the new parameter::
+
+     activities = gl.user_activities.list(
+                    query_parameters={'from': '2019-01-01'},
+                    all=True)
+
+* Additionally the ``all`` paremeter is not sent to the GitLab anymore.
+
 Changes from 1.5 to 1.6
 =======================
 

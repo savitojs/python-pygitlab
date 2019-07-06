@@ -29,6 +29,10 @@ Get a pipeline for a project::
 
     pipeline = project.pipelines.get(pipeline_id)
 
+Get variables of a pipeline::
+
+    variables = pipeline.variables.list()
+
 Create a pipeline for a particular reference::
 
     pipeline = project.pipelines.create({'ref': 'master'})
@@ -93,6 +97,16 @@ Full example with wait for finish::
     while pipeline.finished_at is None:
         pipeline.refresh()
         time.sleep(1)
+
+You can trigger a pipeline using token authentication instead of user
+authentication. To do so create an anonymous Gitlab instance and use lazy
+objects to get the associated project::
+
+    gl = gitlab.Gitlab(URL)  # no authentication
+    project = gl.projects.get(project_id, lazy=True)  # no API call
+    project.trigger_pipeline('master', trigger_token)
+
+Reference: https://docs.gitlab.com/ee/ci/triggers/#trigger-token
 
 Pipeline schedule
 =================
@@ -304,6 +318,10 @@ Get a single artifact file::
 Mark a job artifact as kept when expiration is set::
 
     build_or_job.keep_artifacts()
+
+Delete the artifacts of a job::
+
+    build_or_job.delete_artifacts()
 
 Get a job trace::
 
