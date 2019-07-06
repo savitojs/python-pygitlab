@@ -2,12 +2,7 @@
 Getting started with the API
 ############################
 
-python-gitlab supports both GitLab v3 and v4 APIs.
-
-.. note::
-
-   To use the v3 make sure to install python-gitlab 1.4. Only the v4 API is
-   documented here. See the documentation of earlier versions for the v3 API.
+python-gitlab only supports GitLab APIs v4.
 
 ``gitlab.Gitlab`` class
 =======================
@@ -82,8 +77,8 @@ Examples:
 
    # get the group with id == 2
    group = gl.groups.get(2)
-   for group in groups:
-       print()
+   for project in group.projects.list():
+       print(project)
 
    # create a new user
    user_data = {'email': 'jen@foo.com', 'username': 'jen', 'name': 'Jen'}
@@ -117,6 +112,25 @@ Some objects also provide managers to access related GitLab resources:
    # list the issues for a project
    project = gl.projects.get(1)
    issues = project.issues.list()
+
+python-gitlab allows to send any data to the GitLab server when making queries.
+In case of invalid or missing arguments python-gitlab will raise an exception
+with the GitLab server error message:
+
+.. code-block:: python
+
+   >>> gl.projects.list(sort='invalid value')
+   ...
+   GitlabListError: 400: sort does not have a valid value
+
+You can use the ``query_parameters`` argument to send arguments that would
+conflict with python or python-gitlab when using them as kwargs:
+
+.. code-block:: python
+
+   gl.user_activities.list(from='2019-01-01')  ## invalid
+
+   gl.user_activities.list(query_parameters={'from': '2019-01-01'})  # OK
 
 Gitlab Objects
 ==============
@@ -299,7 +313,9 @@ Rate limits
 
 python-gitlab obeys the rate limit of the GitLab server by default.  On
 receiving a 429 response (Too Many Requests), python-gitlab sleeps for the
-amount of time in the Retry-After header that GitLab sends back.
+amount of time in the Retry-After header that GitLab sends back.  If GitLab
+does not return a response with the Retry-After header, python-gitlab will
+perform an exponential backoff.
 
 If you don't want to wait, you can disable the rate-limiting feature, by
 supplying the ``obey_rate_limit`` argument.
@@ -312,6 +328,18 @@ supplying the ``obey_rate_limit`` argument.
    gl = gitlab.gitlab(url, token, api_version=4)
    gl.projects.list(all=True, obey_rate_limit=False)
 
+If you do not disable the rate-limiting feature, you can supply a custom value
+for ``max_retries``; by default, this is set to 10. To retry without bound when
+throttled, you can set this parameter to -1. This parameter is ignored if
+``obey_rate_limit`` is set to ``False``.
+
+.. code-block:: python
+
+   import gitlab
+   import requests
+
+   gl = gitlab.gitlab(url, token, api_version=4)
+   gl.projects.list(all=True, max_retries=12)
 
 .. warning::
 
