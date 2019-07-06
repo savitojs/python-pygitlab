@@ -1,8 +1,8 @@
-python-gitlab (1:1.7.0-1) UNRELEASED; urgency=medium
+python-gitlab (1:1.9.0-1) UNRELEASED; urgency=medium
 
   * New upstream release
 
- -- Federico Ceratto <federico@debian.org>  Wed, 12 Dec 2018 23:23:05 +0000
+ -- Federico Ceratto <federico@debian.org>  Sat, 06 Jul 2019 14:00:42 +0100
 
 python-gitlab (1:1.6.0-3) unstable; urgency=medium
 
