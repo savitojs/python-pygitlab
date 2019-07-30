@@ -43,7 +43,7 @@ Description: Python 3 GitLab API client library - documentation
 Package: python3-gitlab
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}
-Suggests: python-gitlab-doc
+Suggests: python-gitlab-doc, python-cli
 Description: Python 3 GitLab API client library
  Provides access to the GitLab v4 server API.
  This package contains the Python 3 library.

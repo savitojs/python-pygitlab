@@ -1,6 +1,8 @@
 gitlab-cli for Debian
 ---------------------
 
-The executable is named python-gitlab
+The package 'gitlab-cli' contains the executable.
 
- -- Federico Ceratto <federico@debian.org>  Tue, 27 Nov 2018 20:05:56 +0000
+The executable is named:  python-gitlab
+
+ -- Philip Hands <phil@hands.com>, Tue, 30 Jul 2019 06:50:30 +0200
