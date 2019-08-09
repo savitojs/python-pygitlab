@@ -45,6 +45,10 @@ Cancel builds in a pipeline::
 
     pipeline.cancel()
 
+Delete a pipeline::
+
+    pipeline.delete()
+
 Triggers
 ========
 
@@ -314,6 +318,10 @@ You can also directly stream the output into a file, and unzip it afterwards::
 Get a single artifact file::
 
     build_or_job.artifact('path/to/file')
+
+Get a single artifact file by branch and job::
+
+    project.artifact('branch', 'path/to/file', 'job')
 
 Mark a job artifact as kept when expiration is set::
 
