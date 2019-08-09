@@ -693,11 +693,11 @@ class GroupBoardListManager(CRUDMixin, RESTManager):
     _update_attrs = (("position",), tuple())
 
 
-class GroupBoard(ObjectDeleteMixin, RESTObject):
+class GroupBoard(SaveMixin, ObjectDeleteMixin, RESTObject):
     _managers = (("lists", "GroupBoardListManager"),)
 
 
-class GroupBoardManager(NoUpdateMixin, RESTManager):
+class GroupBoardManager(CRUDMixin, RESTManager):
     _path = "/groups/%(group_id)s/boards"
     _obj_cls = GroupBoard
     _from_parent_attrs = {"group_id": "id"}
@@ -1432,11 +1432,11 @@ class ProjectBoardListManager(CRUDMixin, RESTManager):
     _update_attrs = (("position",), tuple())
 
 
-class ProjectBoard(ObjectDeleteMixin, RESTObject):
+class ProjectBoard(SaveMixin, ObjectDeleteMixin, RESTObject):
     _managers = (("lists", "ProjectBoardListManager"),)
 
 
-class ProjectBoardManager(NoUpdateMixin, RESTManager):
+class ProjectBoardManager(CRUDMixin, RESTManager):
     _path = "/projects/%(project_id)s/boards"
     _obj_cls = ProjectBoard
     _from_parent_attrs = {"project_id": "id"}
@@ -2188,6 +2188,24 @@ class ProjectIssue(
 
     @cli.register_custom_action("ProjectIssue")
     @exc.on_http_error(exc.GitlabGetError)
+    def related_merge_requests(self, **kwargs):
+        """List merge requests related to the issue.
+
+        Args:
+            **kwargs: Extra options to send to the server (e.g. sudo)
+
+        Raises:
+            GitlabAuthenticationError: If authentication is not correct
+            GitlabGetErrot: If the merge requests could not be retrieved
+
+        Returns:
+            list: The list of merge requests.
+        """
+        path = "%s/%s/related_merge_requests" % (self.manager.path, self.get_id())
+        return self.manager.gitlab.http_get(path, **kwargs)
+
+    @cli.register_custom_action("ProjectIssue")
+    @exc.on_http_error(exc.GitlabGetError)
     def closed_by(self, **kwargs):
         """List merge requests that will close the issue when merged.
 
@@ -2693,6 +2711,22 @@ class ProjectMergeRequest(
 
         server_data = self.manager.gitlab.http_post(path, post_data=data, **kwargs)
         self._update_attrs(server_data)
+
+    @cli.register_custom_action("ProjectMergeRequest")
+    @exc.on_http_error(exc.GitlabMRRebaseError)
+    def rebase(self, **kwargs):
+        """Attempt to rebase the source branch onto the target branch
+
+        Args:
+            **kwargs: Extra options to send to the server (e.g. sudo)
+
+        Raises:
+            GitlabAuthenticationError: If authentication is not correct
+            GitlabMRRebaseError: If rebasing failed
+        """
+        path = "%s/%s/rebase" % (self.manager.path, self.get_id())
+        data = {}
+        return self.manager.gitlab.http_put(path, post_data=data, **kwargs)
 
     @cli.register_custom_action(
         "ProjectMergeRequest",
@@ -3752,7 +3786,7 @@ class Project(SaveMixin, ObjectDeleteMixin, RESTObject):
         ("wikis", "ProjectWikiManager"),
     )
 
-    @cli.register_custom_action("Project", tuple(), ("path", "ref"))
+    @cli.register_custom_action("Project", tuple(), ("path", "ref", "recursive"))
     @exc.on_http_error(exc.GitlabGetError)
     def repository_tree(self, path="", ref="", recursive=False, **kwargs):
         """Return a list of files in the repository.
@@ -4243,6 +4277,51 @@ class Project(SaveMixin, ObjectDeleteMixin, RESTObject):
         self.manager.gitlab.http_put(
             path, post_data={"namespace": to_namespace}, **kwargs
         )
+
+    @cli.register_custom_action("Project", ("ref_name", "artifact_path", "job"))
+    @exc.on_http_error(exc.GitlabGetError)
+    def artifact(
+        self,
+        ref_name,
+        artifact_path,
+        job,
+        streamed=False,
+        action=None,
+        chunk_size=1024,
+        **kwargs
+    ):
+        """Download a single artifact file from a specific tag or branch from within the job’s artifacts archive.
+
+        Args:
+            ref_name (str): Branch or tag name in repository. HEAD or SHA references are not supported.
+            artifact_path (str): Path to a file inside the artifacts archive.
+            job (str): The name of the job.
+            streamed (bool): If True the data will be processed by chunks of
+                `chunk_size` and each chunk is passed to `action` for
+                treatment
+            action (callable): Callable responsible of dealing with chunk of
+                data
+            chunk_size (int): Size of each chunk
+            **kwargs: Extra options to send to the server (e.g. sudo)
+
+        Raises:
+            GitlabAuthenticationError: If authentication is not correct
+            GitlabGetError: If the artifacts could not be retrieved
+
+        Returns:
+            str: The artifacts if `streamed` is False, None otherwise.
+        """
+
+        path = "/projects/%s/jobs/artifacts/%s/raw/%s?job=%s" % (
+            self.get_id(),
+            ref_name,
+            artifact_path,
+            job,
+        )
+        result = self.manager.gitlab.http_get(
+            path, streamed=streamed, raw=True, **kwargs
+        )
+        return utils.response_content(result, streamed, action, chunk_size)
 
 
 class ProjectManager(CRUDMixin, RESTManager):
